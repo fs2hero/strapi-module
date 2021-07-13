@@ -1,6 +1,6 @@
 {
   "name": "nuxtjs-strapi-refresh-token",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Strapi module for Nuxt, private(include auto refresh token feature)",
   "repository": "fs2hero/strapi-module",
   "license": "MIT",
