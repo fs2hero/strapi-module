@@ -22,6 +22,7 @@
     "docs": "nuxt docs",
     "lint": "eslint --ext .ts --ext .vue .",
     "release": "yarn test && standard-version && yarn build && git push --follow-tags && npm publish",
+    "publish": "standard-version && yarn build && git push --follow-tags && npm publish",
     "test": "yarn lint && jest"
   },
   "dependencies": {
