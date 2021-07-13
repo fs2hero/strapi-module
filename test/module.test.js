@@ -16,5 +16,6 @@ describe('module', () => {
     const { body } = await get('/')
     expect(body).toContain('@nuxtjs/strapi')
     expect(body).toContain('http://localhost:1337')
+    expect(body).toContain('user2')
   })
 })

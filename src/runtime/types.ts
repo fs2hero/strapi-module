@@ -11,6 +11,7 @@ export type NuxtStrapiQueryParams =
 export interface NuxtStrapiLoginResult {
   user: NuxtStrapiUser
   jwt: string
+  refreshToken: string
 }
 
 export interface StrapiOptions {
@@ -18,6 +19,7 @@ export interface StrapiOptions {
   key: string
   expires: 'session' | number
   cookie: CookieSerializeOptions
+  autoRefreshToken: boolean
 }
 
 export interface NuxtStrapiGraphQLParams {
@@ -53,5 +55,6 @@ export interface NuxtStrapiModuleOptions {
   entities: string[],
   key: string,
   expires: 'session' | string | number,
-  cookie: CookieSerializeOptions
+  cookie: CookieSerializeOptions,
+  autoRefreshToken: boolean
 }

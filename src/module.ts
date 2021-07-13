@@ -9,6 +9,7 @@ const defaults: NuxtStrapiModuleOptions = {
   entities: [],
   key: 'strapi_jwt',
   expires: 'session',
+  autoRefreshToken: true,
   cookie: {}
 }
 

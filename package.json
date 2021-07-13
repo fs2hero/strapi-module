@@ -1,8 +1,8 @@
 {
-  "name": "@nuxtjs/strapi",
-  "version": "0.3.2",
-  "description": "Strapi module for Nuxt",
-  "repository": "nuxt-community/strapi-module",
+  "name": "nuxtjs-strapi-refresh-token",
+  "version": "0.0.1",
+  "description": "Strapi module for Nuxt, private(include auto refresh token feature)",
+  "repository": "fs2hero/strapi-module",
   "license": "MIT",
   "sideEffects": false,
   "exports": {
@@ -17,11 +17,11 @@
     "types"
   ],
   "scripts": {
-    "build": "siroc build",
+    "build": "siroc build && copyfiles \"src/runtime/**/*\" -e \"**/*.ts\" -u 2 lib/runtime",
     "dev": "yarn nuxt-ts example",
     "docs": "nuxt docs",
     "lint": "eslint --ext .ts --ext .vue .",
-    "release": "standard-version && yarn build && git push --follow-tags && npm publish",
+    "release": "yarn test && standard-version && yarn build && git push --follow-tags && npm publish",
     "test": "yarn lint && jest"
   },
   "dependencies": {

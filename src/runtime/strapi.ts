@@ -20,6 +20,7 @@ export class Strapi extends Hookable {
   $cookies: NuxtCookies
   $http: NuxtHTTPInstance
   options: StrapiOptions
+  $refreshTimer: any
 
   constructor (ctx, options: StrapiOptions) {
     super()
@@ -28,6 +29,7 @@ export class Strapi extends Hookable {
     const runtimeConfig = ctx.$config.strapi || {}
     this.$cookies = ctx.app.$cookies
     this.$http = ctx.$http.create({})
+    this.$refreshTimer = null
     this.options = options
 
     this.state = Vue.observable({ user: null })
@@ -72,18 +74,20 @@ export class Strapi extends Hookable {
 
   async register (data: NuxtStrapiRegistrationData): Promise<NuxtStrapiLoginResult> {
     this.clearToken()
-    const { user, jwt } = await this.$http.$post<any>('/auth/local/register', data)
+    const { user, jwt, refreshToken } = await this.$http.$post<any>('/auth/local/register', data)
+    this.setRefreshToken(refreshToken)
     this.setToken(jwt)
     await this.setUser(user)
-    return { user, jwt }
+    return { user, jwt, refreshToken }
   }
 
   async login (data: NuxtStrapiLoginData): Promise<NuxtStrapiLoginResult> {
     this.clearToken()
-    const { user, jwt } = await this.$http.$post<any>('/auth/local', data)
+    const { user, jwt, refreshToken } = await this.$http.$post<any>('/auth/local', data)
+    this.setRefreshToken(refreshToken)
     this.setToken(jwt)
     await this.setUser(user)
-    return { user, jwt }
+    return { user, jwt, refreshToken }
   }
 
   forgotPassword (data: NuxtStrapiEmailData): Promise<unknown> {
@@ -93,10 +97,11 @@ export class Strapi extends Hookable {
 
   async resetPassword (data: NuxtStrapiResetPasswordData): Promise<NuxtStrapiLoginResult> {
     this.clearToken()
-    const { user, jwt } = await this.$http.$post<any>('/auth/reset-password', data)
+    const { user, jwt, refreshToken } = await this.$http.$post<any>('/auth/reset-password', data)
+    this.setRefreshToken(refreshToken)
     this.setToken(jwt)
     await this.setUser(user)
-    return { user, jwt }
+    return { user, jwt, refreshToken }
   }
 
   sendEmailConfirmation (data: NuxtStrapiEmailData): Promise<unknown> {
@@ -106,6 +111,7 @@ export class Strapi extends Hookable {
   async logout (): Promise<void> {
     await this.setUser(null)
     this.clearToken()
+    this.clearRefreshToken()
   }
 
   async fetchUser (): Promise<NuxtStrapiUser> {
@@ -122,6 +128,24 @@ export class Strapi extends Hookable {
     }
 
     return this.user
+  }
+
+  async refreshToken (): Promise<NuxtStrapiLoginResult> {
+    try {
+      this._stopTokenRefreshTimer()
+      const refreshToken = this.getRefreshToken()
+      if (!refreshToken) {
+        return
+      }
+      const { user, jwt } = await this.$http.$post<any>('/auth/token', { refreshToken }, { headers: { Authorization: '' } })
+      this.clearToken()
+      this.setToken(jwt)
+      await this.setUser(user)
+
+      return { user, jwt, refreshToken }
+    } catch (err) {
+      this.clearToken()
+    }
   }
 
   async setUser (user): Promise<void> {
@@ -198,6 +222,7 @@ export class Strapi extends Hookable {
       expires
     })
     this.$http.setToken(token, 'Bearer')
+    this._startTokenRefreshTimer()
   }
 
   clearToken (): void {
@@ -217,5 +242,65 @@ export class Strapi extends Hookable {
       this.clearToken()
     }
     return jwt
+  }
+
+  getRefreshToken (): string {
+    let refreshToken
+    const clientStorage = this.getClientStorage()
+    const refreshKey = this._refreshTokenKey(this.options.key)
+    if (clientStorage) {
+      refreshToken = clientStorage.getItem(refreshKey)
+    }
+
+    return refreshToken
+  }
+
+  setRefreshToken (token: string): void {
+    const clientStorage = this.getClientStorage()
+    const refreshKey = this._refreshTokenKey(this.options.key)
+    clientStorage && clientStorage.setItem(refreshKey, token)
+  }
+
+  clearRefreshToken (): void {
+    this._stopTokenRefreshTimer()
+    const clientStorage = this.getClientStorage()
+    const refreshKey = this._refreshTokenKey(this.options.key)
+    clientStorage && clientStorage.removeItem(refreshKey)
+  }
+
+  _refreshTokenKey (key) {
+    return [key, 'refresh'].join('_')
+  }
+
+  _startTokenRefreshTimer () {
+    if (!this.options.autoRefreshToken) {
+      return
+    }
+    
+    if (this.options.expires !== 'session') {
+      if (this.$refreshTimer) {
+        clearTimeout(this.$refreshTimer)
+        this.$refreshTimer = null
+      }
+
+      let expires = this.options.expires
+      if (expires > 10000) {
+        expires = expires - 10000
+      } else {
+        expires = expires / 2
+      }
+
+      this.$refreshTimer = setTimeout(() => {
+        this.$refreshTimer = null
+        this.refreshToken()
+      }, expires)
+    }
+  }
+
+  _stopTokenRefreshTimer () {
+    if (this.$refreshTimer) {
+      clearTimeout(this.$refreshTimer)
+      this.$refreshTimer = null
+    }
   }
 }
