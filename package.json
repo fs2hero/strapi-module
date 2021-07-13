@@ -1,6 +1,6 @@
 {
   "name": "nuxtjs-strapi-refresh-token",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Strapi module for Nuxt, private(include auto refresh token feature)",
   "repository": "fs2hero/strapi-module",
   "license": "MIT",
@@ -22,7 +22,7 @@
     "docs": "nuxt docs",
     "lint": "eslint --ext .ts --ext .vue .",
     "release": "yarn test && standard-version && yarn build && git push --follow-tags && npm publish",
-    "pub": "standard-version && yarn build && git push --follow-tags && npm publish",
+    "pub": "standard-version && npm publish",
     "test": "yarn lint && jest"
   },
   "dependencies": {
