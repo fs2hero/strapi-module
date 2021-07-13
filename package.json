@@ -1,6 +1,6 @@
 {
   "name": "@nuxtjs/strapi",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Strapi module for Nuxt",
   "repository": "nuxt-community/strapi-module",
   "license": "MIT",
@@ -21,7 +21,7 @@
     "dev": "yarn nuxt-ts example",
     "docs": "nuxt docs",
     "lint": "eslint --ext .ts --ext .vue .",
-    "release": "yarn test && standard-version && yarn build && git push --follow-tags && npm publish",
+    "release": "standard-version && yarn build && git push --follow-tags && npm publish",
     "test": "yarn lint && jest"
   },
   "dependencies": {
