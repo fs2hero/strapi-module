@@ -276,7 +276,6 @@ export class Strapi extends Hookable {
     if (!this.options.autoRefreshToken) {
       return
     }
-    
     if (this.options.expires !== 'session') {
       if (this.$refreshTimer) {
         clearTimeout(this.$refreshTimer)
