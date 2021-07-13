@@ -13,7 +13,7 @@ import type {
   NuxtStrapiUser,
   StrapiOptions
 } from './types'
-import { getExpirationDate, isExpired } from './utils'
+import { getExpirationDate, isExpired, timeExpired } from './utils'
 
 export class Strapi extends Hookable {
   private state: { user: null | any }
@@ -197,23 +197,26 @@ export class Strapi extends Hookable {
     return null
   }
 
-  getToken (): string {
+  getToken (): { token: string, expires: number } {
     let token
+    let exp = 0
     const clientStorage = this.getClientStorage()
     if (clientStorage) {
       const session = destr(clientStorage.getItem(this.options.key))
       if (session && !isExpired(session.expires)) {
         token = session.token
+        exp = timeExpired(session.expires)
+        exp = exp < 0 ? 0 : exp
       }
     }
     if (!token) {
       token = this.$cookies.get(this.options.key)
     }
-    return token
+    return { token, expires: exp }
   }
 
-  setToken (token: string): void {
-    const expires = this.options.expires === 'session' ? undefined : getExpirationDate(this.options.expires)
+  setToken (token: string, exp = 0): void {
+    const expires = this.options.expires === 'session' ? undefined : getExpirationDate(exp || this.options.expires)
 
     const clientStorage = this.getClientStorage()
     clientStorage && clientStorage.setItem(this.options.key, JSON.stringify({ token, expires }))
@@ -222,7 +225,7 @@ export class Strapi extends Hookable {
       expires
     })
     this.$http.setToken(token, 'Bearer')
-    this._startTokenRefreshTimer()
+    this._startTokenRefreshTimer(exp)
   }
 
   clearToken (): void {
@@ -233,11 +236,14 @@ export class Strapi extends Hookable {
   }
 
   private syncToken (jwt?) {
+    let exp = 0
     if (!jwt) {
-      jwt = this.getToken()
+      const { token, expires } = this.getToken()
+      jwt = token
+      exp = expires
     }
     if (jwt) {
-      this.setToken(jwt)
+      this.setToken(jwt, exp)
     } else {
       this.clearToken()
     }
@@ -272,7 +278,7 @@ export class Strapi extends Hookable {
     return [key, 'refresh'].join('_')
   }
 
-  _startTokenRefreshTimer () {
+  _startTokenRefreshTimer (exp = 0) {
     if (!this.options.autoRefreshToken) {
       return
     }
@@ -282,7 +288,7 @@ export class Strapi extends Hookable {
         this.$refreshTimer = null
       }
 
-      let expires = this.options.expires
+      let expires = exp || this.options.expires
       if (expires > 10000) {
         expires = expires - 10000
       } else {

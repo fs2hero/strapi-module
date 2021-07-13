@@ -286,7 +286,7 @@ this.$strapi.setUser(user)
 
 ### `getToken()`
 
-Returns `jwt` from cookies.
+Returns `jwt expires` from cookies.
 
 ```js
 this.$strapi.getToken()
